@@ -2,7 +2,7 @@
 
 Demonstrates use of Generative AI to streamline Utilization Review process in Healthcare. 
 
-![Reference Architecture](genai-demos/ur_service/app/images/ref_architecture.png "Reference Architecture")
+![Reference Architecture](app/images/ref_architecture.png "Reference Architecture")
 
 ## Deploy Locally
 Set environment variables
