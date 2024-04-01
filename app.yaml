@@ -1,0 +1,13 @@
+runtime: python
+env: flex
+
+runtime_config:
+    operating_system: "ubuntu18"
+    runtime_version: "3.11.5"
+
+entrypoint: streamlit run Home.py --server.port $PORT
+
+env_variables:
+    LOCATION: your-region
+    GOOGLE_CLOUD_PROJECT: your-project-id
+    SEARCH_DATASTORE_ID: your-search-datastore-id
