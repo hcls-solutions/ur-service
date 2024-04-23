@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import vertexai
-from vertexai.generative_models import GenerativeModel
-import vertexai.preview.generative_models as generative_models
+import vertexai # type: ignore
+from vertexai.generative_models import GenerativeModel # type: ignore
+from vertexai.preview.generative_models import Tool, grounding # type: ignore
+import vertexai.preview.generative_models as generative_models # type: ignore
 import utils
+
+import logging
+logging.basicConfig(level=logging.ERROR)
 
 generation_config = {
     "max_output_tokens": 2048,
@@ -30,16 +34,22 @@ safety_settings = {
     generative_models.HarmCategory.HARM_CATEGORY_HARASSMENT: generative_models.HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
 }
 
-vertexai.init(project=utils.PROJECT_ID, location=utils.LOCATION)
+vertexai.init(project=utils.PROJECT_ID, location=utils.LLM_LOCATION)
+
 
 def generate_text(ctx: str, input: str) -> str:
     prompt = ctx + input
     model = GenerativeModel(utils.LLM)
-    llm_responses = model.generate_content(prompt, generation_config=generation_config, safety_settings=safety_settings)
+    datastore = f"projects/"+utils.PROJECT_ID+"/locations/"+utils.LOCATION+"/collections/default_collection/dataStores/"+utils.SEARCH_DATASTORE_ID
+    tool1 = Tool.from_retrieval(
+        grounding.Retrieval(grounding.VertexAISearch(datastore=datastore))
+    )    
+    llm_responses = model.generate_content(prompt, generation_config=generation_config, safety_settings=safety_settings, tools=[tool1])
     
     partStr = str(llm_responses.candidates[0].content.parts[0])
     text = partStr[partStr.find('"') + 1 : partStr.rfind('"')]
-    # print(text)
+    logging.info("----------LLM output-------------")
+    logging.info(text)
     return text
 
 def generate_ur_prompt(pa_request: str) -> str:

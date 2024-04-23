@@ -4,12 +4,20 @@ Demonstrates use of Generative AI to streamline Utilization Review process in He
 
 ![Reference Architecture](app/images/ref_architecture.png "Reference Architecture")
 
+## Prerequisite
+### You need a Data Store and a Search App in the Vertex AI Agent Builder in your Google Cloud Platform (GCP) Project.
+
+#### 1. Follow [these instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es) to create a Data Store in your GCP Project.
+
+#### 2. Follow [these instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-engine-es) to create a Search App in your GCP Project.
+
 ## Deploy Locally
 Set environment variables
 ```commandline
 export LOCATION=[your-region]
 export GOOGLE_CLOUD_PROJECT=[your-project-id]
 export SEARCH_DATASTORE_ID=[your-search-datastore-id]
+export SEARCH_APP_ID=[your-search-app-id]
 ```
 
 Install dependencies
@@ -45,6 +53,11 @@ If a default network does not exist in your GCP Project. You can run the followi
 Default network is required for the App Engine deployment.
 ```commandline
 gcloud compute networks create default
+```
+
+Initialize gcloud with the right GCP project.
+```commandline
+gcloud init
 ```
 
 Deploy

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import streamlit as st
+import streamlit as st # type: ignore
 
 st.set_page_config(
-    page_title="Utilization Review Application",
+    page_title="Utilization Review",
     page_icon='app/images/logo.png',
     layout="wide",
 )
@@ -25,16 +25,15 @@ with cols[0]:
     st.write('')
     st.image('app/images/logo.png', '', 64)
 with cols[1]:
-    st.title('Architecture')
+    st.header(':green[Utilization Review Application]')
 
-st.divider()
+st.markdown('''   ''')
 
 cols = st.columns([55, 45])
 with cols[0]:
     st.markdown('''
         ### About
-        This demo app illustrates the use of GCP services like Vertex AI and 
-        Enterprise Search to perform utilization review. 
+        This demo app illustrates the use of GCP services like Agent Builder to perform utilization review. 
         It also supports retrieval and question answering with citation on 
         policies and clinical guidelines documents. 
         It allows UR specialists to quickly process 

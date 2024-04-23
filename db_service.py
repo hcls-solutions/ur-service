@@ -12,9 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
+import streamlit as st # type: ignore
+import firebase_admin # type: ignore
+from firebase_admin import credentials # type: ignore
+from firebase_admin import firestore # type: ignore
 import json
 import utils
 
@@ -25,11 +26,21 @@ if not firebase_admin._apps:
         'projectId': utils.PROJECT_ID,
     })
 
-def get_pa_requests():
+
+def get_pa_request_docs():
     db = firestore.client()
     docs = db.collection('pa_requests').stream()
     return docs
 
+@st.cache_data
+def get_pa_requests():
+    docs = get_pa_request_docs()
+    pa_requests = []
+    for doc in docs:
+        pa_requests.append(doc.to_dict())
+    return pa_requests    
+
+@st.cache_data
 def get_pa_request(pa_request_id):
     db = firestore.client()
     doc_ref = db.collection("pa_requests").document(pa_request_id)
@@ -38,9 +49,10 @@ def get_pa_request(pa_request_id):
     pa_request = json.dumps(doc.to_dict())
     return pa_request
 
+@st.cache_data
 def get_pa_request_ids() -> list:
-    docs = get_pa_requests()
-    pa_requests = []
+    docs = get_pa_request_docs()
+    pa_request_ids = []
     for doc in docs:
-        pa_requests.append(doc.id)
-    return pa_requests
+        pa_request_ids.append(doc.id)
+    return pa_request_ids

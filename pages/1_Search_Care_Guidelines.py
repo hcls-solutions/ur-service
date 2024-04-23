@@ -12,15 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import pandas as pd
-import streamlit as st
-from st_aggrid import GridOptionsBuilder, AgGrid, ColumnsAutoSizeMode
-
-from search_service import generate_answer
+import pandas as pd # type: ignore
+import streamlit as st # type: ignore
+from st_aggrid import GridOptionsBuilder, AgGrid, ColumnsAutoSizeMode # type: ignore
 import utils
+from search_service import generate_answer
+
+import logging
+logging.basicConfig(level=logging.ERROR)
 
 st.set_page_config(
-    page_title="Utilization Review Application",
+    page_title="Utilization Review",
     page_icon='app/images/logo.png',
     layout="wide",
 )
@@ -30,55 +32,100 @@ with cols[0]:
     st.write('')
     st.image('app/images/logo.png', '', 64)
 with cols[1]:
-    st.title('Search Policies and Care Guidelines')
+    st.title(":green[Search Policies and Care Guidelines]")
 st.divider()
 
-st.markdown('''Given a query, Enterprise Search will generate answer with citations and identify which text snippets are most relevant.''')
+st.markdown('''### Given a query, Enterprise Search will generate answer with citations and identify which text snippets are most relevant.''')
+cols = st.columns([55, 45])
+with cols[0]:
+    answer = ''
+    sources = []
 
-answer = ''
-sources = []
+    st.markdown(":blue[Type a :orange[***question***] in the box below:]")
+    question = st.text_input("Type a question: (E.g. Will Medicare require prior authorization for prescribing CGM to Type 1 diabetic patient?)", value=" ", label_visibility="collapsed")
 
-question = st.text_input("Question: (E.g. Will Medicare require prior authorization for prescribing CGM to Type 1 diabetic patient?)", value="Ask your own question?")
+    if question != " ":
+        result = generate_answer(question)
+        answer = result["answer"]
+        sources = result["sources"]
 
-if question != "Ask your own question?":
-    result = generate_answer(question)
-    answer = result["answer"]
-    sources = result["sources"]
+    st.text_area("Summary Response: ", value=answer,)
 
-st.text_area("Summary Response: ", value=answer,)
+    st.markdown(f"**Sources:** ")
+    logging.info(sources)
+    df = pd.DataFrame(sources, columns=['title', 'gcs_uri', 'content'])
+    gb = GridOptionsBuilder.from_dataframe(df[['title', 'content', 'gcs_uri']])
+    gb.configure_selection()
+    gb.configure_column('title', header_name="Document Title: ")
+    gb.configure_column('content', header_name="Content: ")
+    gb.configure_column('gcs_uri', header_name="Document URI: ")
 
-st.divider()
-
-df = pd.DataFrame(sources, columns=['title', 'gcs_uri', 'content'])
-gb = GridOptionsBuilder.from_dataframe(df[['title']])
-gb.configure_selection()
-gb.configure_column('title', header_name="Citations: (click to expand)")
-gridOptions = gb.build()
+    gridOptions = gb.build()
 
 
-if sources:
-    data = AgGrid(
-        df,
-        height=150,
-        gridOptions=gridOptions,
-        columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW)
+    if sources:
+        data = AgGrid(
+            df,
+            height=150,
+            gridOptions=gridOptions,
+            columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW)
 
-    selected_rows = data["selected_rows"] 
+        selected_rows = data["selected_rows"] 
 
-    st.session_state.value = "Display"
+        st.session_state.value = "Display"
 
-    def change_label():
-        st.session_state.value = "Hide"
-
-    if len(selected_rows) != 0:
-        st.markdown(f"**Title:** {selected_rows[0]['title']}")
-        with st.expander(label=f"{st.session_state.value} Manual", expanded=False):
+        def change_label():
             st.session_state.value = "Hide"
-            st.markdown(utils.show_pdf(selected_rows[0]['gcs_uri']), unsafe_allow_html=True)
 
-        st.markdown('**Relevant Snippets**')
-        for snippet in selected_rows[0]['content']:
-            st.markdown(f'- {snippet}', unsafe_allow_html=True)
+        if len(selected_rows) != 0:
+            st.markdown(f"**Content:**")
+            with st.container():
+                content=selected_rows[0]['content']
+                logging.info(content)
+                for snippet in content:
+                    st.markdown(f'- {snippet}', unsafe_allow_html=True)
 
-else:
-    st.caption('No Citations')
+            st.markdown(f"**Title:** {selected_rows[0]['title']}")
+            with st.expander(label=f"{st.session_state.value} Manual", expanded=False):
+                st.session_state.value = "Hide"
+                st.markdown(utils.show_pdf(selected_rows[0]['gcs_uri']), unsafe_allow_html=True)
+
+    else:
+        st.caption('None')
+
+with cols[1]:
+    st.markdown(":orange[***Sample Questions:***]")
+    st.markdown('''              
+        ``` 
+            Will Medicare approve a request for hyperbaric oxygen (HBO) therapy? 
+        ```
+        ``` 
+            Will Medicare approve CGM for patients with Type 2 diabetes? 
+        ```
+        ``` 
+            What are Medicare guidelines for prescribing CGM? 
+        ```
+        ``` 
+            What are Medicare guidelines for prescribing Ozempic? 
+        ```
+        ``` 
+            Do I need prior authorization for deep anesthesia services for dental procedures? 
+        ```  
+                
+        ``` 
+            Does Medicare requires prior authorization for insulin pumps prescription? 
+        ```  
+    
+        ``` 
+            Does Medicare requires prior authorization for CGM Device? 
+        ```  
+    
+        ``` 
+            Does Medicare requires prior authorization for GLP Drugs? 
+        ```  
+    
+        ``` 
+            Will Medicare require prior authorization for prescribing CGM to Type 1 diabetic patient? 
+        ``` 
+                        
+    ''')

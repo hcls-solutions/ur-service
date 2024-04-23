@@ -11,3 +11,4 @@ env_variables:
     LOCATION: your-region
     GOOGLE_CLOUD_PROJECT: your-project-id
     SEARCH_DATASTORE_ID: your-search-datastore-id
+    SEARCH_APP_ID: your-search-app-id

@@ -14,63 +14,92 @@
 
 from __future__ import annotations
 
-import logging
-#logging.basicConfig(level=logging.INFO)
-
-import streamlit as st
-from google.protobuf.json_format import MessageToDict
-from google.cloud import discoveryengine
-from google.cloud.discoveryengine_v1.services.search_service.pagers import SearchPager
-from google.cloud.discoveryengine_v1.services.document_service.pagers import ListDocumentsPager
+import streamlit as st # type: ignore
+from google.protobuf.json_format import MessageToDict # type: ignore
 import utils
-
-def enterprise_search_list_docs(
-        project_id: str,
-        search_engine_id: str,
-        location: str = 'global',
-) -> ListDocumentsPager:
-    """List Enterprise Search Corpus"""
-    client = discoveryengine.DocumentServiceClient()
-    parent = "projects/" + project_id + "/locations/" + location + \
-        "/collections/default_collection/dataStores/" + search_engine_id + "/branches/default_branch"
-    request = discoveryengine.ListDocumentsRequest(parent=parent)
-    return client.list_documents(request=request)
+from typing import List
+from google.api_core.client_options import ClientOptions # type: ignore
+from google.cloud import discoveryengine_v1 as discoveryengine
 
 
-def enterprise_search_query(
-        project_id: str,
-        search_engine_id: str,
-        search_query: str,
-        location: str = 'global',
-        serving_config_id: str = 'default_config',
-) -> SearchPager:
-    """Query Enterprise Search"""
-    # Create a client
-    client = discoveryengine.SearchServiceClient()
+import logging
+logging.basicConfig(level=logging.ERROR)
 
-    # The full resource name of the search engine serving config
-    # e.g. projects/{project_id}/locations/{location}
-    serving_config = client.serving_config_path(
-        project=project_id,
-        location=location,
-        data_store=search_engine_id,
-        serving_config=serving_config_id,
+# TODO(developer): Uncomment these variables before running the sample.
+project_id = utils.PROJECT_ID
+location = utils.LOCATION          # Values: "global", "us", "eu"
+engine_id = utils.SEARCH_APP_ID
+search_query = " "
+
+
+def execute_search(
+    project_id: str,
+    location: str,
+    engine_id: str,
+    search_query: str,
+) -> List[discoveryengine.SearchResponse]:
+    #  For more information, refer to:
+    # https://cloud.google.com/generative-ai-app-builder/docs/locations#specify_a_multi-region_for_your_data_store
+    client_options = (
+        ClientOptions(api_endpoint=f"{location}-discoveryengine.googleapis.com")
+        if location != "global"
+        else None
     )
 
-    search_spec = discoveryengine.SearchRequest.ContentSearchSpec()
-    search_spec.summary_spec.summary_result_count = 3
-    search_spec.snippet_spec.max_snippet_count = 3
+    # Create a client
+    client = discoveryengine.SearchServiceClient(client_options=client_options)
+
+    # The full resource name of the search app serving config
+    serving_config = f"projects/{project_id}/locations/{location}/collections/default_collection/engines/{engine_id}/servingConfigs/default_config"
+
+    # Optional: Configuration options for search
+    # Refer to the `ContentSearchSpec` reference for all supported fields:
+    # https://cloud.google.com/python/docs/reference/discoveryengine/latest/google.cloud.discoveryengine_v1.types.SearchRequest.ContentSearchSpec
+    content_search_spec = discoveryengine.SearchRequest.ContentSearchSpec(
+        # For information about snippets, refer to:
+        # https://cloud.google.com/generative-ai-app-buxilder/docs/snippets
+        snippet_spec=discoveryengine.SearchRequest.ContentSearchSpec.SnippetSpec(
+            return_snippet=True
+        ),
+        # For information about search summaries, refer to:
+        # https://cloud.google.com/generative-ai-app-builder/docs/get-search-summaries
+        summary_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec(
+            summary_result_count=3,
+            include_citations=True,
+            ignore_adversarial_query=True,
+            ignore_non_summary_seeking_query=True,
+            model_prompt_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelPromptSpec(
+                preamble="YOUR_CUSTOM_PROMPT"
+            ),
+            model_spec=discoveryengine.SearchRequest.ContentSearchSpec.SummarySpec.ModelSpec(
+                version="stable",
+            ),
+        ),
+    )
+
+    # Refer to the `SearchRequest` reference for all supported fields:
+    # https://cloud.google.com/python/docs/reference/discoveryengine/latest/google.cloud.discoveryengine_v1.types.SearchRequest
+
     request = discoveryengine.SearchRequest(
-        page_size=3,
         serving_config=serving_config,
         query=search_query,
-        content_search_spec=search_spec
+        page_size=3,
+        content_search_spec=content_search_spec,
+        query_expansion_spec=discoveryengine.SearchRequest.QueryExpansionSpec(
+            condition=discoveryengine.SearchRequest.QueryExpansionSpec.Condition.AUTO,
+        ),
+        spell_correction_spec=discoveryengine.SearchRequest.SpellCorrectionSpec(
+            mode=discoveryengine.SearchRequest.SpellCorrectionSpec.Mode.AUTO
+        )
     )
 
-    return client.search(request)
+    response = client.search(request)
+    logging.info(response)
+
+    return response
 
 
-def _get_sources(response: SearchPager) -> list[(str, list)]:
+def _get_sources(response: List) -> list[(str, list)]:
     """Parse ES response and generate list of tuples for sources"""
     sources = []
     for result in response.results:
@@ -83,32 +112,21 @@ def _get_sources(response: SearchPager) -> list[(str, list)]:
             metadata = MessageToDict(result.document.derived_struct_data)
             sources.append((
                 metadata["title"],
+                # "title",
                 metadata["link"],
+                # "link",
                 content))
     return sources
 
 
 def generate_answer(query: str) -> dict:
-    response = enterprise_search_query(
+    response = execute_search(
         project_id=utils.PROJECT_ID,
-        search_engine_id=utils.SEARCH_DATASTORE_ID,
+        location=utils.LOCATION,
+        engine_id=utils.SEARCH_APP_ID,
         search_query=query)
     result = {}
     result['answer'] = response.summary.summary_text
     result['sources'] = _get_sources(response)
     logging.info(result['sources'])
     return result
-
-@st.cache_data
-def get_corpus() -> list[dict]:
-    corpus = []
-    docs = enterprise_search_list_docs(
-        project_id=utils.PROJECT_ID,
-        search_engine_id=utils.SEARCH_DATASTORE_ID)
-    for doc in docs:
-        metadata = MessageToDict(doc.derived_struct_data)       
-        metadata['id'] = doc.id
-        metadata['gcs_uri'] = doc.content.uri
-        corpus.append(metadata)
-    logging.info(corpus)
-    return corpus

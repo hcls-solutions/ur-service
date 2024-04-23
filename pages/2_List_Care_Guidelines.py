@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import streamlit as st
-import pandas as pd
-from st_aggrid import GridOptionsBuilder, AgGrid, ColumnsAutoSizeMode
-
-from search_service import get_corpus
+import pandas as pd # type: ignore
+import streamlit as st # type: ignore
+from st_aggrid import GridOptionsBuilder, AgGrid, ColumnsAutoSizeMode # type: ignore
 import utils
+from list_docs_in_search_ds import list_docs
+
 
 st.set_page_config(
-    page_title="Utilization Review Application",
+    page_title="Utilization Review",
     page_icon='app/images/logo.png',
     layout="wide",
 )
@@ -30,16 +30,16 @@ with cols[0]:
     st.write('')
     st.image('app/images/logo.png', '', 64)
 with cols[1]:
-    st.title('Browse Policies And Care Guidelines')
+    st.title(":green[Policies And Care Guidelines]")
 st.divider()
 st.markdown('''-Below are all the documents uploaded to Enterprise Search for this demo.''')  
 
-col1, col2 = st.columns(2)
+cols = st.columns([40, 60])
 
-with col1:
-    df = pd.DataFrame(get_corpus())
+with cols[0]:
+    df = pd.DataFrame(list_docs())
     gb = GridOptionsBuilder.from_dataframe(df[['gcs_uri']])
-    # gb.configure_column('id', header_name="Document ID")
+    gb.configure_column('id', header_name="Document ID")
     gb.configure_selection()
     gb.configure_column('gcs_uri', header_name="Select a document to browse")
 
@@ -51,12 +51,10 @@ with col1:
         gridOptions=gridOptions,
         columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW)
 
-with col2:
+with cols[1]:
     selected_rows = data["selected_rows"]
 
     if len(selected_rows) != 0:
         st.write(selected_rows[0]['gcs_uri'])
         st.write(utils.show_pdf(selected_rows[0]['gcs_uri']), unsafe_allow_html=True)
-        
-
     

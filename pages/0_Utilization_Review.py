@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import streamlit as st
-
-from db_service import get_pa_request_ids, get_pa_request
+import streamlit as st # type: ignore
+import re
+from st_aggrid import GridOptionsBuilder, AgGrid, ColumnsAutoSizeMode # type: ignore
+import pandas as pd  # type: ignore
+from db_service import get_pa_requests, get_pa_request
 from llm_service import generate_ur_prompt, generate_recommendation
 
+import logging
+logging.basicConfig(level=logging.ERROR)
+
 st.set_page_config(
-    page_title = "Utilization Review Application",
+    page_title = "Utilization Review",
     page_icon = 'app/images/logo.png',
     layout = "wide",
 )
@@ -28,37 +33,119 @@ with cols[0]:
     st.write('')
     st.image('app/images/logo.png', '', 64)
 with cols[1]:
-    st.title('Utilization Review')
-st.divider()
+    st.header(":green[Simplify Utilization Review: 3 Easy Steps]")
 
-def reset():
-    st.session_state.prompt = " "
-    st.session_state.recommendation = " "
+st.markdown(
+    """
+    <style>
+    textarea {
+        font-family: 'Google Sans'; font-size: 16px !important;
+    }
+    input {
+        font-family: 'Google Sans'; font-size: 16px !important;
+    }
+    select {
+        font-size: 14px;
+    }
 
-pa_request_ids = get_pa_request_ids()
-cols = st.columns([20, 80])
-with cols[0]:
-    pa_request_id = st.selectbox("PA Requests", pa_request_ids, on_change=reset)
-with cols[1]:
-    if pa_request_id:
-        pa_request = get_pa_request(pa_request_id)
-        st.text_area(":blue[PA Request (JSON): ]", pa_request)
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+PROMPT_ALERT = "Select a PA request (a row from the table above) and press the button: 'Generate Prompt'."
+REC_ALERT = "Generate or type a prompt in the text area above and press the button: 'Generate Recommendation'."
+def init_prompt():
+    st.session_state.prompt = PROMPT_ALERT
 
-def render_prompt():
-    prompt = generate_ur_prompt(pa_request=pa_request)
-    st.session_state.prompt = prompt
+def init_recommendation():
+    st.session_state.recommendation = REC_ALERT
 
-st.button("Generate Prompt", on_click=render_prompt)
-prompt = st.text_area(":blue[Review and Correct Prompt: ]", key = 'prompt')
+
+def set_recommendation():
+    prompt = st.session_state.prompt
+    if PROMPT_ALERT == prompt or "" == prompt: 
+        recommendation = REC_ALERT
+    else:    
+        recommendation = generate_recommendation(prompt)
+    init_recommendation()
+    st.session_state.recommendation = recommendation
+    logging.info("--------------PROMPT----------------")
+    logging.info(prompt)
+    logging.info("-----------RECOMMENDATION-----------")
+    logging.info(recommendation)
 
 def render_recommendation():
-    prompt = st.session_state.prompt
-    recommendation = generate_recommendation(prompt)
-    st.session_state.recommendation = recommendation
+    with st.container():
+        if "recommendation" in st.session_state:
+            recommendation = st.session_state.recommendation
+            if REC_ALERT == recommendation:
+                st.write(":red["+REC_ALERT+"]")            
+            else:
+                logging.info("------------RECOMMENDATION-------------")
+                logging.info(recommendation)
+                out = recommendation.replace('\\n', '  \n  ')
+                st.markdown(out)
+                # st.text_area(":blue[Recommendation]", key = 'recommendation', height=230, label_visibility="collapsed")
+             
 
-st.button("Generate Recommendation", on_click=render_recommendation)
-with st.container():
-   st.write(":blue[Recommendation: ]")
-   if 'recommendation' in st.session_state:
-        if st.session_state.recommendation != " ":
-            st.markdown(st.session_state.recommendation)
+def set_prompt(pa_request_id):
+    pa_request = get_pa_request(pa_request_id)
+    prompt = generate_ur_prompt(pa_request=pa_request)
+    logging.info("--------------PROMPT----------------")
+    logging.info(prompt)
+    out = prompt.replace('\\n', '  \n  ')
+    init_prompt()
+    st.session_state.prompt = out
+
+def render_prompt():
+    st.markdown(":blue[2. Review and correct the :orange[***system generated prompt***]:]")
+    st.text_area(":blue[2. Review and correct the system generated prompt: ]", key = 'prompt', height=130, label_visibility="collapsed")
+
+    st.markdown(":blue[3. Press :orange[Generate Recommendation] button to generate UR recommendation.]")
+    st.form_submit_button(":orange[Generate Recommendation]", on_click=set_recommendation, use_container_width=True)   
+
+def render_pa_requests_container():
+    pa_requests = get_pa_requests()
+    logging.info(pa_requests)
+    df = pd.json_normalize(pa_requests, max_level=2)
+    with st.form("pa_request_form"):
+        st.markdown(":blue[1. Select the :orange[***Prior authorization(PA) request***] below and press Generate Prompt button to generate UR Prompt.]")
+        gb = GridOptionsBuilder.from_dataframe(df[['request_id', 'patient.patient_name', 'diagnosis.description', 'diagnosis.code','current_condition.name', 'service.description', 'service.code', 'provider.name']])
+        gb.configure_selection()
+        gb.configure_column('request_id', header_name="Request ID: ")
+        gb.configure_column('patient.patient_name', header_name="Patient Name: ")
+        gb.configure_column('diagnosis.description', header_name="Diagnosis: ") 
+        gb.configure_column('diagnosis.code', header_name="Diagnosis Codes: ")       
+        gb.configure_column('current_condition.name', header_name="Current conditions: ")
+        gb.configure_column('service.description', header_name="Service: ")
+        gb.configure_column('service.code', header_name="CPT Codes: ")
+        gb.configure_column('provider.name', header_name="Provider Name: ")        
+        gridOptions = gb.build()
+        
+        if pa_requests:
+            data = AgGrid(
+                df,
+                height=250,
+                gridOptions=gridOptions,
+                columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW)
+
+        selected_rows = data["selected_rows"] 
+        prompt_button = st.form_submit_button(":orange[Generate Prompt]", use_container_width=True)
+
+        if prompt_button:
+            if selected_rows:
+                pa_request_id = selected_rows[0]["request_id"]
+                logging.info("======== Request ID ===========")
+                logging.info(pa_request_id)
+                set_prompt(pa_request_id)
+                init_recommendation()
+            else:
+                st.session_state.prompt = PROMPT_ALERT
+                st.session_state.recommendation = REC_ALERT    
+        
+        render_prompt()
+        render_recommendation()        
+
+render_pa_requests_container()
+
+
