@@ -35,7 +35,7 @@ Launch
 streamlit run Home.py
 ```
 
-## Deploy to App Engine
+<!-- ## Deploy to App Engine
 
 Ensure the default App Engine service account has the following IAM permissions:
 - Discovery Engine Editor
@@ -68,4 +68,4 @@ gcloud app deploy
 Browse
 ```commandline
 gcloud app browse
-```
+``` -->
