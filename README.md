@@ -38,16 +38,6 @@ streamlit run Home.py
 ```
 
 ## Deploy to Cloud Run
-Update following ENV attributes in the [Dockerfile](./Dockerfile)  
-```
-ENV LOCATION=[your-region]
-ENV GOOGLE_CLOUD_PROJECT=[your-project-id]
-ENV SEARCH_DATASTORE_ID=[your-search-datastore-id]
-ENV SEARCH_APP_ID=[your-search-app-id]
-ENV LLM_LOCATION=[your-LLM_LOCATION]
-ENV LLM=[your-LLM]
-```
-
 Set environment variables
 ```commandline
 export AR_REPO=[your-ar-repo-name]
