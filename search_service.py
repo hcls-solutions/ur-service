@@ -16,16 +16,15 @@ from __future__ import annotations
 
 import streamlit as st # type: ignore
 from google.protobuf.json_format import MessageToDict # type: ignore
+from google.protobuf.struct_pb2 import Struct # type: ignore
 import utils
 from typing import List
 from google.api_core.client_options import ClientOptions # type: ignore
 from google.cloud import discoveryengine_v1 as discoveryengine
 
-
 import logging
 logging.basicConfig(level=logging.ERROR)
 
-# TODO(developer): Uncomment these variables before running the sample.
 project_id = utils.PROJECT_ID
 location = utils.LOCATION          # Values: "global", "us", "eu"
 engine_id = utils.SEARCH_APP_ID
@@ -97,24 +96,30 @@ def execute_search(
     logging.info(response)
 
     return response
-
+    
+def to_proto(value):
+    return Struct(fields={k: v for k, v in value.items()},)
 
 def _get_sources(response: List) -> list[(str, list)]:
     """Parse ES response and generate list of tuples for sources"""
     sources = []
     for result in response.results:
-        # doc_info = MessageToDict(result.document._pb)
-        doc_info = MessageToDict(result.document.derived_struct_data)
+
+        if type(result.document.derived_struct_data).__name__ == 'MapComposite':
+            doc_info = MessageToDict(to_proto(result.document.derived_struct_data.pb))
+        else:
+            doc_info = MessageToDict(result.document.derived_struct_data)
+
+        logging.info(doc_info)
         if (doc_info.get('snippets')):
             content = [snippet.get('snippet') for snippet in
                        doc_info.get('snippets', []) if
                        snippet.get('snippet') is not None]
-            metadata = MessageToDict(result.document.derived_struct_data)
+            title = doc_info.get('title')
+            link = doc_info.get('link')
             sources.append((
-                metadata["title"],
-                # "title",
-                metadata["link"],
-                # "link",
+                title,
+                link,
                 content))
     return sources
 

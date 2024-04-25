@@ -14,10 +14,12 @@ Demonstrates use of Generative AI to streamline Utilization Review process in He
 ## Deploy Locally
 Set environment variables
 ```commandline
-export LOCATION=[your-region]
 export GOOGLE_CLOUD_PROJECT=[your-project-id]
 export SEARCH_DATASTORE_ID=[your-search-datastore-id]
+export LOCATION=[your-search-datastore-region]
 export SEARCH_APP_ID=[your-search-app-id]
+export LLM_LOCATION=[your-LLM-region]
+export LLM=[your-LLM]
 ```
 
 Install dependencies
@@ -35,37 +37,41 @@ Launch
 streamlit run Home.py
 ```
 
-<!-- ## Deploy to App Engine
-
-Ensure the default App Engine service account has the following IAM permissions:
-- Discovery Engine Editor
-- Discovery Engine Service Agent
-
-Set the environment variables in `app.yaml`
-```yaml
-env_variables:
-    LOCATION: your-region
-    GOOGLE_CLOUD_PROJECT: your-project-id
-    SEARCH_DATASTORE_ID: your-search-datastore-id
+## Deploy to Cloud Run
+Update following ENV attributes in the [Dockerfile](./Dockerfile)  
+```
+ENV LOCATION=[your-region]
+ENV GOOGLE_CLOUD_PROJECT=[your-project-id]
+ENV SEARCH_DATASTORE_ID=[your-search-datastore-id]
+ENV SEARCH_APP_ID=[your-search-app-id]
+ENV LLM_LOCATION=[your-LLM_LOCATION]
+ENV LLM=[your-LLM]
 ```
 
-If a default network does not exist in your GCP Project. You can run the following to create a default network. 
-Default network is required for the App Engine deployment.
+Set environment variables
 ```commandline
-gcloud compute networks create default
+export AR_REPO=[your-ar-repo-name]
+export AR_REPO_LOCATION=[your-ar-repo-region]
+export SERVICE_NAME=[your-app-name]
 ```
 
-Initialize gcloud with the right GCP project.
+Create Artifact repository in your GCP Project. 
+<span style="color:red">**You can skip this if a repository already exist!**</span>
 ```commandline
-gcloud init
+gcloud artifacts repositories create "$AR_REPO" --location="$AR_REPO_LOCATION" --repository-format=Docker
 ```
 
-Deploy
+Build the app and save it in the Artifact repository
 ```commandline
-gcloud app deploy
+./build.sh
 ```
 
-Browse
+Deploy the app from the Artifact repository to Cloud Run
 ```commandline
-gcloud app browse
-``` -->
+./deploy.sh
+```
+
+Test locally using Cloud Run proxy
+```
+./run_proxy.sh
+```

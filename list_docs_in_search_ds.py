@@ -15,10 +15,10 @@
 from __future__ import annotations
 
 import logging
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.ERROR)
 
 import streamlit as st # type: ignore
-from google.protobuf.json_format import MessageToDict # type: ignore
 from google.cloud import discoveryengine
 from google.cloud.discoveryengine_v1.services.document_service.pagers import ListDocumentsPager # type: ignore
 import utils
@@ -42,16 +42,14 @@ def list_docs() -> list[dict]:
         project_id=utils.PROJECT_ID,
         search_engine_id=utils.SEARCH_DATASTORE_ID,
         location=utils.LOCATION)
-    for doc in docs: 
-        logging.info("--------Document ------")   
-        logging.info(doc) 
-        logging.info("--------Document Type ------")   
-        logging.info(type(doc))
-        logging.info("--------Struct Data------")   
-        logging.info(type(doc.struct_data))
+    for doc in docs:
+        id = doc.id
+        name =  doc.name
+        gcs_uri = doc.content.uri
         metadata = {}
-        metadata['id'] = doc.id
-        metadata['gcs_uri'] = doc.content.uri
+        metadata['id'] = id
+        metadata['name'] = name
+        metadata['gcs_uri'] = gcs_uri
         corpus.append(metadata)
-    logging.info(corpus)
+
     return corpus

@@ -23,8 +23,9 @@ PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
 SEARCH_DATASTORE_ID = os.environ['SEARCH_DATASTORE_ID']
 SEARCH_APP_ID = os.environ['SEARCH_APP_ID']
 
-LLM_LOCATION = "us-central1"
-LLM = "gemini-1.0-pro"
+LLM_LOCATION = os.environ['LLM_LOCATION']
+LLM = os.environ['LLM']
+
 UR_PROMPT_CTX = """Transform prior authorization requests from JSON format to plain text:
 Output template: Review a prior authorization request for {service.type}, {service.description (service.code)}  
 for our member, {patient.patient_name}, who is {patient.patient_age} years old, {patient.patient_gender} with 

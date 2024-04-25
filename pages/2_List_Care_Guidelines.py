@@ -40,6 +40,7 @@ with cols[0]:
     df = pd.DataFrame(list_docs())
     gb = GridOptionsBuilder.from_dataframe(df[['gcs_uri']])
     gb.configure_column('id', header_name="Document ID")
+    # gb.configure_column('name', header_name="Document Name")
     gb.configure_selection()
     gb.configure_column('gcs_uri', header_name="Select a document to browse")
 
