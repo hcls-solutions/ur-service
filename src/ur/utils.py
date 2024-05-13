@@ -15,7 +15,7 @@
 import base64
 import os
 import re
-
+from google.protobuf.struct_pb2 import Struct # type: ignore
 from google.cloud import storage
 
 import logging
@@ -123,3 +123,6 @@ def download_from_gcs(uri: str) -> bytes:
     bucket_name, object_name = matches.group(1), matches.group(2)
     blob = client.bucket(bucket_name).blob(object_name)
     return blob.download_as_string()
+
+def to_proto(value):
+    return Struct(fields={k: v for k, v in value.items()},)

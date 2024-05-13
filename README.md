@@ -47,10 +47,17 @@ export AR_REPO_LOCATION=[your-ar-repo-region]
 export SERVICE_NAME=[your-app-name]
 ```
 
-Create Artifact repository in your GCP Project. 
+If this is the first time you are trying to deploy the App in your GCP Project, 
+you must enable APIs and Create an Artifact repository in your new GCP Project. 
 <span style="color:red">**You can skip this if a repository already exist!**</span>
 ```commandline
+gcloud config set project $GOOGLE_CLOUD_PROJECT
+
 gcloud artifacts repositories create "$AR_REPO" --location="$AR_REPO_LOCATION" --repository-format=Docker
+
+gcloud services enable cloudbuild.googleapis.com
+gcloud services enable run.googleapis.com
+
 ```
 
 Build the app and save it in the Artifact repository

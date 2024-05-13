@@ -16,11 +16,10 @@ from __future__ import annotations
 
 import streamlit as st # type: ignore
 from google.protobuf.json_format import MessageToDict # type: ignore
-from google.protobuf.struct_pb2 import Struct # type: ignore
 from typing import List
 from google.api_core.client_options import ClientOptions # type: ignore
 from google.cloud import discoveryengine_v1 as discoveryengine
-from ur.utils import PROJECT_ID, LOCATION, SEARCH_APP_ID
+from ur.utils import to_proto, PROJECT_ID, LOCATION, SEARCH_APP_ID
 
 import logging
 logging.basicConfig(level=logging.ERROR)
@@ -92,9 +91,6 @@ def execute_search(
     logger.info(response)
 
     return response
-    
-def to_proto(value):
-    return Struct(fields={k: v for k, v in value.items()},)
 
 def _get_sources(response: List) -> list[(str, list)]:
     """Parse ES response and generate list of tuples for sources"""

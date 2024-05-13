@@ -22,7 +22,7 @@ from google.protobuf.json_format import MessageToDict # type: ignore
 import streamlit as st # type: ignore
 from google.cloud import discoveryengine
 from google.cloud.discoveryengine_v1.services.document_service.pagers import ListDocumentsPager # type: ignore
-from ur.utils import PROJECT_ID, SEARCH_DATASTORE_ID, LOCATION
+from ur.utils import to_proto, PROJECT_ID, SEARCH_DATASTORE_ID, LOCATION
 
 def fetch_docs_from_search_ds(
         project_id: str,
@@ -44,11 +44,14 @@ def list_docs() -> list[dict]:
         search_engine_id=SEARCH_DATASTORE_ID,
         location=LOCATION)
     for doc in docs:
-        doc_info = MessageToDict(doc.struct_data)
+        if type(doc.struct_data).__name__ == 'MapComposite':
+            doc_info = MessageToDict(to_proto(doc.struct_data.pb))
+        else:
+            doc_info = MessageToDict(doc.struct_data)
         url = doc_info.get('url')
         if url == None:
             url = "None"      
-        logger.info("#########url#############")
+        logger.info("########## url #############")
         logger.info(url)
         logger.info("############################")
         id = doc.id
