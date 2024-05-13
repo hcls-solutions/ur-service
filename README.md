@@ -5,14 +5,16 @@ Demonstrates use of Generative AI to streamline Utilization Review process in He
 ![Reference Architecture](app/images/ref_architecture.png "Reference Architecture")
 
 ## Prerequisite
-### You need a Data Store and a Search App in the Vertex AI Agent Builder in your Google Cloud Platform (GCP) Project.
+You should complete the following three steps before you start deploying the App.
 
-#### 1. Follow [these instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es) to create a Data Store in your GCP Project.
+1. You need a few PDF documents in a Google Cloud Storage (GCS) Bucket in your GCP Project.
+ 
+2. Create a Cloud Storage Data Store in the Vertex AI Agent Builder to ingest PDF documents from the GCS Bucket. [Here are the instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es#cloud-storage) to create a Cloud Storage Data Store in the Vertex AI Agent Builder.
 
-#### 2. Follow [these instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-engine-es) to create a Search App in your GCP Project.
+3. Create a Search App in the Vertex AI Agent Builder to implement Search and Summarization over the PDF documents. [Here are the instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-engine-es) to create a Search App in your GCP Project.
 
 ## Deploy Locally
-Set environment variables
+Set environment variables:
 ```commandline
 export GOOGLE_CLOUD_PROJECT=[your-project-id]
 export SEARCH_DATASTORE_ID=[your-search-datastore-id]
@@ -34,7 +36,7 @@ gcloud auth application-default login
 
 Launch
 ```commandline
-streamlit run Home.py
+streamlit run src/Home.py
 ```
 
 ## Deploy to Cloud Run
