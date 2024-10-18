@@ -77,10 +77,12 @@ with cols[0]:
 
 with cols[1]:
     selected_rows = data["selected_rows"]
-
-    if len(selected_rows) != 0: 
-        url = selected_rows[0]['url']      
-        gcs_uri = selected_rows[0]['gcs_uri']
+    # print(selected_rows)
+    if selected_rows is not None and len(selected_rows) != 0: 
+        selected_row = selected_rows.iloc[0] 
+        # print(selected_row)
+        url = selected_row.url      
+        gcs_uri = selected_row.gcs_uri
         if gcs_uri.endswith('.txt'):
             st.write(url)
         else:    

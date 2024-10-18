@@ -70,9 +70,7 @@ with cols[0]:
     gb.configure_column('content', header_name="Content: ")
     gb.configure_column('gcs_uri', header_name="Document URI: ")
 
-
     gridOptions = gb.build()
-
 
     if sources:
         data = AgGrid(
@@ -81,25 +79,28 @@ with cols[0]:
             gridOptions=gridOptions,
             columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW)
 
-        selected_rows = data["selected_rows"] 
+        selected_rows = data["selected_rows"]
+        # print(selected_rows)
 
         st.session_state.value = "Display"
 
         def change_label():
             st.session_state.value = "Hide"
 
-        if len(selected_rows) != 0:
+        if selected_rows is not None and len(selected_rows) != 0: 
+            selected_row = selected_rows.iloc[0] 
+            # print(selected_row)
             st.markdown(f"**Content:**")
             with st.container():
-                content=selected_rows[0]['content']
+                content=selected_row.content
                 logging.info(content)
                 for snippet in content:
                     st.markdown(f'- {snippet}', unsafe_allow_html=True)
 
-            st.markdown(f"**Title:** {selected_rows[0]['title']}")
+            st.markdown(f"**Title:** {selected_row.title}")
             with st.expander(label=f"{st.session_state.value} Manual", expanded=False):
                 st.session_state.value = "Hide"
-                st.markdown(show_pdf(selected_rows[0]['gcs_uri']), unsafe_allow_html=True)
+                st.markdown(show_pdf(selected_row.gcs_uri), unsafe_allow_html=True)
 
     else:
         st.caption('None')

@@ -24,6 +24,7 @@ logger = logging.getLogger(__name__)
 
 LOCATION = os.environ['LOCATION']
 PROJECT_ID = os.environ['GOOGLE_CLOUD_PROJECT']
+FIRESTORE_DATABASE = os.environ['FIRESTORE_DATABASE']
 SEARCH_DATASTORE_ID = os.environ['SEARCH_DATASTORE_ID']
 SEARCH_APP_ID = os.environ['SEARCH_APP_ID']
 

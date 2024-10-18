@@ -8,16 +8,20 @@ Demonstrates use of Generative AI to streamline Utilization Review process in He
 You should complete the following three steps before you start deploying the App.
 
 1. You need a few PDF documents in a Google Cloud Storage (GCS) Bucket in your GCP Project.
- 
-2. Create a Cloud Storage Data Store in the Vertex AI Agent Builder to ingest PDF documents from the GCS Bucket. [Here are the instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es#cloud-storage) to create a Cloud Storage Data Store in the Vertex AI Agent Builder.
 
-3. Create a Search App in the Vertex AI Agent Builder to implement Search and Summarization over the PDF documents. [Here are the instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-engine-es) to create a Search App in your GCP Project.
+2. Import sample prior authorization requests into a firestore.  
+[Create a database in GCP Firestore](https://firebase.google.com/docs/firestore/manage-databases#create_a_database), and import the [sample data](firestore_data_pa_requests) into the database. You can refer to [this guide](https://firebase.google.com/docs/firestore/manage-data/export-import#import_all_documents_from_an_export) for importing the provided [sample data](firestore_data_pa_requests) to your Firestore database.
+ 
+3. Create a Cloud Storage Data Store in the Vertex AI Agent Builder to ingest PDF documents from the GCS Bucket. [Here are the instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-data-store-es#cloud-storage) to create a Cloud Storage Data Store in the Vertex AI Agent Builder.
+
+4. Create a Search App in the Vertex AI Agent Builder to implement Search and Summarization over the PDF documents. [Here are the instructions](https://cloud.google.com/generative-ai-app-builder/docs/create-engine-es) to create a Search App in your GCP Project.
 
 ## Deploy Locally
 Set environment variables:
 ```commandline
 export GOOGLE_CLOUD_PROJECT=[your-project-id]
 export SEARCH_DATASTORE_ID=[your-search-datastore-id]
+export FIRESTORE_DATABASE=[your-firestore-database]
 export LOCATION=[your-search-datastore-region]
 export SEARCH_APP_ID=[your-search-app-id]
 export LLM_LOCATION=[your-LLM-region]

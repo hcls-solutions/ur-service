@@ -113,15 +113,15 @@ def render_pa_requests_container():
     df = pd.json_normalize(pa_requests, max_level=2)
     with st.form("pa_request_form"):
         st.markdown(":blue[1. Select the :orange[***Prior authorization(PA) request***] below and press Generate Prompt button to generate UR Prompt.]")
-        gb = GridOptionsBuilder.from_dataframe(df[['request_id', 'patient.patient_name', 'diagnosis.description', 'diagnosis.code','current_condition.name', 'service.description', 'service.code', 'provider.name']])
+        gb = GridOptionsBuilder.from_dataframe(df[['request_id', 'patient.patient_name', 'service.description', 'service.code', 'diagnosis.description', 'diagnosis.code','current_condition.name', 'provider.name']])
         gb.configure_selection()
         gb.configure_column('request_id', header_name="Request ID: ")
         gb.configure_column('patient.patient_name', header_name="Patient Name: ")
+        gb.configure_column('service.description', header_name="Service: ")
+        gb.configure_column('service.code', header_name="CPT Codes: ")
         gb.configure_column('diagnosis.description', header_name="Diagnosis: ") 
         gb.configure_column('diagnosis.code', header_name="Diagnosis Codes: ")       
         gb.configure_column('current_condition.name', header_name="Current conditions: ")
-        gb.configure_column('service.description', header_name="Service: ")
-        gb.configure_column('service.code', header_name="CPT Codes: ")
         gb.configure_column('provider.name', header_name="Provider Name: ")        
         gridOptions = gb.build()
         
@@ -131,22 +131,27 @@ def render_pa_requests_container():
                 height=250,
                 gridOptions=gridOptions,
                 columns_auto_size_mode=ColumnsAutoSizeMode.FIT_ALL_COLUMNS_TO_VIEW)
-
-        selected_rows = data["selected_rows"] 
+        
         prompt_button = st.form_submit_button(":orange[Generate Prompt]", use_container_width=True)
 
         if prompt_button:
-            if selected_rows:
-                pa_request_id = selected_rows[0]["request_id"]
-                logger.info("------------- Request ID ----------")
-                logger.info(pa_request_id)
-                logger.info("-----------------------------------")
-                set_prompt(pa_request_id)
-                init_recommendation()
+            selected_rows = data["selected_rows"]
+            # print(selected_rows)
+            if selected_rows is not None and len(selected_rows) != 0: 
+                selected_row = selected_rows.iloc[0] 
+                # print(selected_row)
+                if len(selected_row) != 0:
+                    pa_request_id = selected_row.request_id
+                    logger.info("------------- Request ID ----------")
+                    logger.info(pa_request_id)
+                    logger.info("-----------------------------------")
+                    set_prompt(pa_request_id)
+                    init_recommendation()
+                else:
+                    st.session_state.prompt = PROMPT_ALERT
+                    st.session_state.recommendation = REC_ALERT    
             else:
-                st.session_state.prompt = PROMPT_ALERT
-                st.session_state.recommendation = REC_ALERT    
-        
+                st.session_state.prompt = PROMPT_ALERT 
         render_prompt()
         render_recommendation()        
 
